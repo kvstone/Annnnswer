@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>有问必答 Annnnswer</title>
+    <link rel="stylesheet" href="css/swiper.min.css">
+    <style>
+        html,
+        body {
+            position: relative;
+            height: 100%;
+            width: 100%;
+        }
+        
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        
+        #preload {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            left: 0;
+            top: 0;
+            z-index: 200;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .preload-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+        
+        #preload .tip {
+            display: inline;
+            color: #fff;
+            font-size: 4vw;
+            text-transform: uppercase;
+            font-weight: bold;
+            line-height: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tip-bg {
+            position: absolute;
+            width: 0px;
+            height: 100%;
+            background: #fff;
+        }
+        
+        .swiper-container {
+            width: 100%;
+            height: 100%;
+            z-index: 100;
+        }
+        
+        #txt {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+        
+        .box {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        h2 {
+            cursor: pointer;
+            color: #fff;
+            font-size: 6vw;
+            letter-spacing: -0.04em;
+            display: inline;
+            position: absolute;
+            max-width: 74.61937%;
+            white-space: normal;
+            left: 0;
+            margin-left: 12.69031%;
+        }
+        
+        .answer {
+            position: absolute;
+            bottom: 40px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="preload">
+        <div class="preload-bg"></div>
+        <div class="tip">
+            <div class="tip-bg"></div><span class="tiptxt">有问必答</span></div>
+    </div>
+    <div class="swiper-container">
+        <div class="swiper-wrapper">
+            <div class="swiper-slide" data-poster="https://bing.ioliu.cn/v1/rand?&1">
+                <h2>Ready...</h2>
+                <h2 class="answer" style="display: none;">Go!</h2>
+            </div>
+
+        </div>
+        <div id="txt"></div>
+        <img id="img" style="display: none;" />
+    </div>
+    <canvas id="shows" style="position: absolute; left: 0px; top: 0px;"></canvas>
+
+    <audio id="music" autoplay loop>
+		<source src="http://img-cdn2.515ppt.com/sound/00/30/52/95/305295_1a9c1ed9cc6311afe53c3dfe38345e2c.mp3" type="audio/mp3">
+		<source src="http://img-cdn2.515ppt.com/sound/00/30/52/88/305288_0e7d06239a44cb2170c3e3f597f83dfe.mp3" type="audio/mp3">
+	</audio>
+
+    <script src="js/jquery-1.10.1.min.js"></script>
+    <script src="js/swiper.min.js"></script>
+    <script src="js/TweenMax.min.js"></script>
+    <script>
+        var status = "0";
+        var cnt = 0;
+        var mySwiper;
+
+        function addNew() {
+            var pic = new Image();
+            pic.src = "https://bing.ioliu.cn/v1/rand?&" + Math.random();
+            //$("#img").attr("src", pic.src);
+            //Img.push(pic);
+            var qest = q[Math.floor(Math.random() * q.length)];
+            mySwiper.appendSlide('<div class="swiper-slide" style="background-image: url(' + pic.src + ');"><h2>' + qest.question + '？</h2><h2 class="answer">' + qest.answer + '</h2></div>');
+            //console.log((new Blob([pic.src])).size);
+            if (mySwiper.slides.length > 3) {
+                mySwiper.removeSlide(0);
+            }
+        }
+
+        //预加载图片
+        slides = $('.swiper-slide');
+        Img = [];
+        slides.each(function(index, element) {
+            Img[index] = new Image();
+            Img[index].src = slides.eq(index).attr('data-poster');
+            slidesLength = index;
+            //使用附加文本替换virtualTranslate，避免鼠标滚轮失效
+            //$("#txt").append('<div class="box">' + slides.eq(index).html() + '</div>')
+        });
+
+
+        tweenObj = {
+            translate: 0
+        };
+        var canvas = document.getElementById("shows");
+        ctx = canvas.getContext("2d");
+
+        window.onload = function() {
+
+            mySwiper = new Swiper('.swiper-container', {
+                watchSlidesProgress: true,
+                //virtualTranslate: true, //,较好的解决方案但会导致滚轮失效
+                //mousewheel: true,
+                keyboard: true,
+                grabCursor: true,
+                //autoplay: true,
+                speed: 500, //限制滚轴时间间隔
+                //loop: true,
+                on: {
+                    init: function() {
+                        resize(this);
+                        /*预加载动画*/
+                        tl = new TimelineMax();
+                        tl.to(".tip-bg", 0.5, {
+                                width: '100%'
+                            })
+                            .set(".tiptxt", {
+                                autoAlpha: 0
+                            })
+                            .to(".tip-bg", 0.5, {
+                                x: '101%'
+                            }, "+=0.2")
+                            .to(".preload-bg", 0.5, {
+                                x: '101%'
+                            }, "-=0.1")
+                            .set("#preload", {
+                                autoAlpha: 0
+                            });
+
+                    },
+                    resize: function() {
+                        resize(this);
+                    },
+                    setTranslate: function() {
+                        //draw(this, 1);
+                    },
+                    keyPress: function(e) {
+                        if (this.isEnd) {
+                            addNew();
+                        }
+                        if (e) {
+                            switch (status) {
+                                case "0":
+
+                                    { //显示答案
+                                        $(".swiper-slide-active").children("h2:last").show();
+                                        status = "1";
+                                        break;
+                                    }
+                                case "1":
+                                    { //翻页
+                                        this.slideNext();
+
+                                        break;
+                                    }
+                            }
+                        }
+                    },
+                    slideChange: function() {
+
+                        status = "0";
+                        console.log(mySwiper.slides.length);
+                        var audio = document.getElementById("music");
+                        audio.play();
+                        addNew();
+                    },
+                },
+            });
+        }
+
+
+
+        function resize(swiper) {
+
+            clientWidth = document.body.clientWidth
+            clientHeight = document.body.clientHeight
+
+            // 每一个显示块的宽度
+            blockWidth = clientWidth / 5
+
+            // 使用的图片大小 720/1280=0.5625	
+            // 图片裁剪区域
+            if (clientHeight / clientWidth > 0.5625) {
+                cutWidth = 720 * clientWidth / clientHeight
+                cutX = (1280 - cutWidth) / 2
+                cutHeight = 720
+                cutY = 0
+            } else {
+                cutHeight = 1280 * clientHeight / clientWidth
+                cutY = (720 - cutHeight) / 2
+                cutWidth = 1280
+                cutX = 0
+            }
+
+            canvas.width = clientWidth;
+            canvas.height = clientHeight;
+
+            draw(swiper);
+
+        }
+
+        function draw(swiper, speed) {
+
+            if (typeof(speed) == "undefined") {
+                speed = 0.3;
+            }
+
+            TweenMax.killAll();
+
+            TweenMax.to(tweenObj, speed, {
+                tlanslate: swiper.translate,
+                ease: Power4.easeOut,
+                onUpdate: function() {
+
+                    //如果超出显示范围添加黑色背景
+                    if (swiper.progress < 0 || swiper.progress > 1) {
+                        ctx.fillStyle = "#000000";
+                        ctx.fillRect(0, 0, clientWidth, clientHeight);
+                    }
+
+                    tlanslate = tweenObj.tlanslate
+
+                    for (i = 0; i <= slidesLength; i++) {
+
+
+                        percent = -tlanslate / clientWidth - i
+
+                        if (Math.abs(percent) <= 1) {
+
+                            n2scale = 2 - Math.abs(percent) * 2
+                            if (n2scale > 1) {
+                                n2scale = 1
+                            }
+                            n1scale = 1 - Math.abs(percent) * 2
+                            if (n1scale < 0) {
+                                n1scale = 0
+                            }
+
+                            //画5个块，裁剪出位移差
+                            ctx.drawImage(Img[i], cutX + cutWidth * percent * 0.2 + cutWidth / 5 * Math.abs(percent) * 2, cutY, cutWidth / 5 * n1scale, cutHeight, (clientWidth * i + tlanslate) * 0.6 + blockWidth * (1 - n1scale), 0, blockWidth * n1scale, clientHeight);
+                            ctx.drawImage(Img[i], cutX + cutWidth / 5 - cutWidth * percent * 0.1 + cutWidth / 5 - cutWidth / 5 * n2scale, cutY, cutWidth / 5 * n2scale, cutHeight, (clientWidth * i + tlanslate) * 0.6 + blockWidth + blockWidth - blockWidth * n2scale, 0, blockWidth * n2scale, clientHeight);
+                            ctx.drawImage(Img[i], cutX + cutWidth / 5 * 2 - cutWidth * percent * 0.4, cutY, cutWidth / 5, cutHeight, (clientWidth * i + tlanslate) * 0.6 + blockWidth * 2, 0, blockWidth, clientHeight);
+                            ctx.drawImage(Img[i], cutX + cutWidth / 5 * 3 - cutWidth * percent * 0.1, cutY, cutWidth / 5 * n2scale, cutHeight, (clientWidth * i + tlanslate) * 0.6 + blockWidth * 3, 0, blockWidth * n2scale, clientHeight);
+                            ctx.drawImage(Img[i], cutX + cutWidth / 5 * 4 + cutWidth * percent * 0.2, cutY, cutWidth / 5 * n1scale, cutHeight, (clientWidth * i + tlanslate) * 0.6 + blockWidth * 4, 0, blockWidth * n1scale, clientHeight);
+                        }
+
+                        //设置文字相对位置，右边缩进0.8，左边加大1.2倍
+                        modifer = 1
+                        if (i > -tlanslate / clientWidth) {
+                            modifer = 0.8
+                        }
+                        if (i < -tlanslate / clientWidth) {
+                            modifer = 1.2
+                        }
+                        swiper.$el.find('.box').eq(i).transform('translate3d(' + (tlanslate / clientWidth + i) * clientWidth * modifer + 'px, 0, 0)');
+
+                    }
+
+                }
+            })
+
+        }
+
+        var q = [{
+            "type": "Q",
+            "question": "代表“自负、自恋、尊敬”的花是",
+            "answer": " 水仙 "
+        }, {
+            "type": "T",
+            "question": "如果一双鞋按现在统一标准是26号，则它相对应的老鞋号是39 ",
+            "answer": ""
+        }, {
+            "type": "Q",
+            "question": "一听可口可乐的净含量是",
+            "answer": "355ml "
+        }, {
+            "type": "Q",
+            "question": "世界上生产玉米最多的国家是",
+            "answer": "美国 "
+        }, {
+            "type": "Q",
+            "question": "对人体来说安全电压是多少伏",
+            "answer": 36
+        }, {
+            "type": "Q",
+            "question": "成年人每日的正常睡眠时间应是多少小时",
+            "answer": "7～8 "
+        }, {
+            "type": "Q",
+            "question": "远视眼患者应该少吃",
+            "answer": "高脂肪食品 "
+        }, {
+            "type": "Q",
+            "question": "发生火灾后，浓烟通常距离地面几厘米",
+            "answer": 30
+        }, {
+            "type": "Q",
+            "question": "晨雾中较高的含有哪种元素不利人体健康",
+            "answer": "铅 "
+        }, {
+            "type": "Q",
+            "question": "“经济联合国”是指",
+            "answer": "WTO"
+        }, {
+            "type": "T",
+            "question": "吸烟有害，烟草中毒性的物质是:烟碱（尼古丁） ",
+            "answer": ""
+        }, {
+            "type": "Q",
+            "question": "台风过后，会平静一段时间，不久将会从哪个方向再度横扫",
+            "answer": "反方向 "
+        }, {
+            "type": "Q",
+            "question": "一次性筷子的发明者",
+            "answer": "日本人 "
+        }, {
+            "type": "Q",
+            "question": "黄酒的俗称是",
+            "answer": "老酒 "
+        }, {
+            "type": "Q",
+            "question": "缺少哪种维生素后，儿童易患佝偻病，成人易得软骨病",
+            "answer": "维生素D "
+        }, {
+            "type": "Q",
+            "question": "江河鱼和湖水鱼的区别在于",
+            "answer": "江河鱼鳞片薄，湖水鱼鳞片厚 "
+        }, {
+            "type": "Q",
+            "question": "铁罗汉是",
+            "answer": "乌龙茶 "
+        }, {
+            "type": "Q",
+            "question": "CT是指什么",
+            "answer": "计算机断层扫描 "
+        }, {
+            "type": "T",
+            "question": "乌龙茶是半发酵茶 ",
+            "answer": ""
+        }, {
+            "type": "Q",
+            "question": "我国公安部门颁发的出国留学护照有效期为几年",
+            "answer": "5 年"
+        }, {
+            "type": "Q",
+            "question": "国际风筝节我国哪一城市举行",
+            "answer": "潍坊 "
+        }, {
+            "type": "Q",
+            "question": "我国四大石窑中的麦积山石窑位于哪里",
+            "answer": "天水 "
+        }, {
+            "type": "Q",
+            "question": "中国第一个眼库建于何处",
+            "answer": "广州中山医学院 "
+        }, {
+            "type": "Q",
+            "question": "成年人的鼻子一天要处理大约多少立方米的空气",
+            "answer": "14立方米 "
+        }, {
+            "type": "Q",
+            "question": "通常铅笔上的英文字母“B”表示",
+            "answer": "软质铅笔 "
+        }, {
+            "type": "Q",
+            "question": "我国四大藏书阁之一的文渊阁坐落于",
+            "answer": "北京 "
+        }, {
+            "type": "Q",
+            "question": "长江三峡由西陵峡、巫峡、瞿塘峡组成，其中最短的一个峡为",
+            "answer": "瞿塘峡"
+        }, {
+            "type": "Q",
+            "question": "人和鸭子相比，谁的体温较高",
+            "answer": "鸭子 "
+        }, {
+            "type": "T",
+            "question": "婴儿刚刚出生的时候，首先需要注射哪种疫苗:卡介苗 ",
+            "answer": ""
+        }, {
+            "type": "Q",
+            "question": "催熟西红柿在性质上和未熟的西红柿一样，它的最终营养成分尚未形成。而且，此时西红柿内32、一种有毒的化学成分，它是",
+            "answer": " 番茄碱 "
+        }, {
+            "type": "Q",
+            "question": "中国民间的节令——“九九”是从哪一天开始的",
+            "answer": " 冬至 "
+        }, {
+            "type": "Q",
+            "question": "沏茶叶的水温是",
+            "answer": " 80℃ "
+        }, {
+            "type": "Q",
+            "question": "电冰箱型号BCD-180W，其中180W代表",
+            "answer": "容积180升 "
+        }, {
+            "type": "Q",
+            "question": "灵芝的味道是",
+            "answer": " 极苦 "
+        }, {
+            "type": "Q",
+            "question": "野外捕获了一只体型较大的猎物，当然要痛吃一顿了，吃不了就得兜着走了，那么哪里的肉味38、道最鲜美，也最适于保存呢",
+            "answer": " 里脊肉 "
+        }, {
+            "type": "Q",
+            "question": "金店里出售的K白金首饰，其主要成分是",
+            "answer": " 黄金 "
+        }, {
+            "type": "Q",
+            "question": "虾主要产于我国哪些海域",
+            "answer": " 黄海、勃海 "
+        }, {
+            "type": "Q",
+            "question": "摩托车在高速公路上行驶，时速不得高于多少公里",
+            "answer": 90
+        }, {
+            "type": "Q",
+            "question": "“隔着门缝看人”时，看到的人",
+            "answer": " 和原来一样 "
+        }, {
+            "type": "Q",
+            "question": "世界无烟日是哪一天",
+            "answer": "5月31日"
+        }, {
+            "type": "Q",
+            "question": "中国工商银行发行的信用卡是",
+            "answer": " 牡丹卡 "
+        }, {
+            "type": "Q",
+            "question": "邮政编号的最后两位数表示什么",
+            "answer": " 投递局 "
+        }, {
+            "type": "Q",
+            "question": "鸡蛋哪种吃法最能保持维生素B2",
+            "answer": " 白煮 "
+        }, {
+            "type": "T",
+            "question": "一般金婚是纪念结婚 50周年 ",
+            "answer": ""
+        }, {
+            "type": "Q",
+            "question": "符号“&amp;”的中文意思是",
+            "answer": " 和 "
+        }, {
+            "type": "Q",
+            "question": "药酒是在哪个朝代之后出现的",
+            "answer": "唐代 "
+        }, {
+            "type": "Q",
+            "question": "电话有一项被称为千里眼的业务是",
+            "answer": " 来电显示"
+        }, {
+            "type": "Q",
+            "question": "在雷电交加的户外，要避免遭雷电击伤应该",
+            "answer": " 双脚并拢蹲下 "
+        }, {
+            "type": "Q",
+            "question": "游泳时小腿抽筋应该",
+            "answer": " 将抽筋的腿的脚趾向背侧弯曲 "
+        }, {
+            "type": "Q",
+            "question": "燕窝产自我国哪些地区",
+            "answer": " 广东省崖州、福建省泉州 "
+        }, {
+            "type": "Q",
+            "question": "人体缺少哪种微量元素会造成甲状腺肿大",
+            "answer": "碘 "
+        }, {
+            "type": "Q",
+            "question": "人体的解毒器官是",
+            "answer": "肝脏 "
+        }, {
+            "type": "Q",
+            "question": "食鱼对眼睛有益是因为鱼中尤其鱼眼中富含",
+            "answer": "维生素A "
+        }, {
+            "type": "T",
+            "question": "被美国《时代》周刊称为第一理财家的是 彼得林奇 ",
+            "answer": ""
+        }, {
+            "type": "Q",
+            "question": "龙卷风来临时，如果身处野外开阔地，不应该",
+            "answer": " 从龙卷风经过道路的右边跑开 "
+        }, {
+            "type": "Q",
+            "question": "低度酒的酒精含量不高于多少",
+            "answer": "20 %"
+
+        }, {
+            "type": "Q",
+            "question": "家用中央空调上的“VRV”字样代表",
+            "answer": "变冷媒流量空调系统 "
+        }, {
+            "type": "Q",
+            "question": "闪电时产生的热量一般达摄氏多少度",
+            "answer": " 3万 "
+        }, {
+            "type": "Q",
+            "question": "电子计算机发明于哪一年",
+            "answer": " 1946年 "
+        }, {
+            "type": "Q",
+            "question": "电脑的中央处理器英文简写是什么",
+            "answer": "CPU "
+        }, {
+            "type": "Q",
+            "question": "傣族的泼水节是在每年公历四月中还是农历四月中",
+            "answer": " 公历 "
+        }, {
+            "type": "Q",
+            "question": "六必居酱菜产于哪里",
+            "answer": " 北京 "
+        }, {
+            "type": "Q",
+            "question": "龙卷风来临时，如果身处室内，应该",
+            "answer": " 打开一些窗户 "
+        }, {
+            "type": "Q",
+            "question": "出国旅游时申请护照一般需",
+            "answer": " 20天 "
+        }, {
+            "type": "Q",
+            "question": "出国旅游申请护照时，哪种人需“家长同意书”",
+            "answer": "20岁以下 "
+        }, {
+            "type": "Q",
+            "question": "人整个浸在水里游泳时在哪里受到的浮力大",
+            "answer": "深水浅水一样 "
+        }, {
+            "type": "Q",
+            "question": "哪类食物会导致人疲倦",
+            "answer": "酸性食物 "
+        }, {
+            "type": "Q",
+            "question": "大马哈鱼”在我国原产于",
+            "answer": " 黑龙江流域 "
+        }, {
+            "type": "Q",
+            "question": "国民收入的英文简写是什么",
+            "answer": " NI "
+        }, {
+            "type": "Q",
+            "question": "泸州老窖特曲发酵窖令最老的有多少年",
+            "answer": 300
+        }, {
+            "type": "Q",
+            "question": "我国家用电的使用是",
+            "answer": "交流电 "
+        }, {
+            "type": "Q",
+            "question": "火腿在冰箱中什么温度下会延长保质期，而且不变味",
+            "answer": " 0-4摄氏度 "
+        }, {
+            "type": "Q",
+            "question": "大豆是哪些豆子的统称",
+            "answer": "黄豆、青豆、黑豆 "
+        }, {
+            "type": "Q",
+            "question": "如果你想查询邮政编码，应该拨哪个电话",
+            "answer": 184
+        }, {
+            "type": "Q",
+            "question": "交通银行属于什么性质",
+            "answer": "股份制银行 "
+        }, {
+            "type": "Q",
+            "question": "我国民法规定成年人的年龄是",
+            "answer": " 18周岁 "
+        }, {
+            "type": "Q",
+            "question": "医学上称为脑血管意外的是",
+            "answer": "中风 "
+        }, {
+            "type": "Q",
+            "question": "查询电话号码可拨",
+            "answer": 114
+        }, {
+            "type": "Q",
+            "question": "为了眼睛的健康，看电视时应做到",
+            "answer": "观看者离电视屏幕2米以上 "
+        }, {
+            "type": "Q",
+            "question": "腊八蒜是在腊八",
+            "answer": " 制作 "
+        }, {
+            "type": "Q",
+            "question": "普洱茶的产地在哪",
+            "answer": "云南 "
+        }, {
+            "type": "Q",
+            "question": "南岳衡山四奇中的藏经殿的奇妙之处在于它的",
+            "answer": " 秀 "
+        }, {
+            "type": "Q",
+            "question": "金鱼源于",
+            "answer": " 野生鲫鱼 "
+        }, {
+            "type": "Q",
+            "question": "在我国的冰箱能降到零下几度",
+            "answer": 18
+        }, {
+            "type": "Q",
+            "question": "世界环境日是哪一天",
+            "answer": "6月15日"
+        }, {
+            "type": "Q",
+            "question": "我国邮政编码的前两位数字表示什么",
+            "answer": "省、自治区或直辖市 "
+        }, {
+            "type": "Q",
+            "question": "圆圈里面有个“工”的符号，代表什么",
+            "answer": "工商银行 "
+        }, {
+            "type": "Q",
+            "question": "以下那种笋通常被称为“玉兰片”",
+            "answer": "干笋 "
+        }, {
+            "type": "Q",
+            "question": "世界水日是",
+            "answer": "3月22日"
+        }, {
+            "type": "Q",
+            "question": "信用卡何时起源于何地",
+            "answer": "1915年，美国 "
+        }, {
+            "type": "Q",
+            "question": "豆浆中加入什么会制成豆腐",
+            "answer": "石膏 "
+        }, {
+            "type": "Q",
+            "question": "电话机上的“HA”表示哪类电话机类型",
+            "answer": "按键式自动化机 "
+        }, {
+            "type": "Q",
+            "question": "“新谷酒”是哪个民族的习俗",
+            "answer": " 哈尼族 "
+        }, {
+            "type": "Q",
+            "question": "我们通常叫做“乌龙茶”的实际是",
+            "answer": " 青茶 "
+        }, {
+            "type": "Q",
+            "question": "我国最早发行国际信用卡的银行是",
+            "answer": " 中国银行 "
+        }, {
+            "type": "Q",
+            "question": "正月初一吃饺子这一习俗从哪个朝代开始",
+            "answer": " 明代 "
+        }, {
+            "type": "Q",
+            "question": "碧螺春”产于",
+            "answer": " 江苏太湖 "
+        }, {
+            "type": "Q",
+            "question": "的九寨沟风景名胜区位于哪个省份",
+            "answer": " 四川 "
+        }, {
+            "type": "Q",
+            "question": "医用X光会损害身体健康吗",
+            "answer": " 会 "
+        }, {
+            "type": "Q",
+            "question": "中国的“国酒”是",
+            "answer": "茅台 "
+        }, {
+            "type": "Q",
+            "question": "被称为“岁寒三友”的三种植物是",
+            "answer": " 松竹梅 "
+        }, {
+            "type": "Q",
+            "question": "的旅游风景区黄山，人知有四绝，下列哪一项不在其中",
+            "answer": " 瀑布 "
+        }, {
+            "type": "Q",
+            "question": "世界上地势最低的国家是",
+            "answer": " 荷兰 "
+        }, {
+            "type": "Q",
+            "question": "世界上第一个赋予妇女选举权的国家是",
+            "answer": " 新西兰 "
+        }, {
+            "type": "Q",
+            "question": "有“果王”美称的水果是",
+            "answer": "榴莲 "
+        }, {
+            "type": "Q",
+            "question": "新生儿不宜服用或注射下列哪种药物",
+            "answer": "氯霉素 "
+        }, {
+            "type": "Q",
+            "question": "成年男子在嘴的四周、脸的下部、颚、下颌以及喉的上端等部位均会生长胡须，每天大约增长",
+            "answer": " 0.4毫米 "
+        }, {
+            "type": "Q",
+            "question": "苏州四大园林之一的留园建于哪一年代",
+            "answer": "清 "
+        }, {
+            "type": "Q",
+            "question": "烂白菜不能吃是因为它含",
+            "answer": " 亚硝酸盐 "
+        }, {
+            "type": "Q",
+            "question": "我国四大藏书阁之一的文津阁坐落于",
+            "answer": " 承德 "
+        }, {
+            "type": "Q",
+            "question": "草莓在哪国作为蔬菜",
+            "answer": "日本 "
+        }, {
+            "type": "Q",
+            "question": "我国四大书院之一的岳麓书院坐落于",
+            "answer": " 湖南 "
+        }, {
+            "type": "Q",
+            "question": "体重50公斤的人，味精用量，每天不应超过",
+            "answer": " 6克 "
+        }, {
+            "type": "Q",
+            "question": "长江三峡由西陵峡、巫峡、瞿塘峡组成，其中最长的一个峡为",
+            "answer": " 西陵峡 "
+        }, {
+            "type": "Q",
+            "question": "“加积鸭”是哪里的风味美食",
+            "answer": " 海南 "
+        }, {
+            "type": "Q",
+            "question": "理发店门前都有一个红、蓝、白三色带组成的旋转柱，其中白色代表",
+            "answer": "绷带 "
+        }, {
+            "type": "Q",
+            "question": "塔是宗教建筑之一，最早的古塔是从哪个国家传入中国的",
+            "answer": "印度 "
+        }, {
+            "type": "Q",
+            "question": "“三伏”中初伏的日期是怎样确定的",
+            "answer": "夏至后的第三个庚日 "
+        }, {
+            "type": "Q",
+            "question": "鸡尾酒会最早出现于",
+            "answer": "拉美 "
+        }, {
+            "type": "Q",
+            "question": "伞形毒菌与无毒伞菌的区别不正确的是",
+            "answer": " 伞形毒菌孢子为紫棕色，而无毒伞菌孢子为白色 "
+        }, {
+            "type": "Q",
+            "question": "哪个年龄的人话最多",
+            "answer": "6～12岁儿童 "
+        }, {
+            "type": "Q",
+            "question": "邮票上的字母T表示什么意义",
+            "answer": "特种邮票 "
+        }, {
+            "type": "Q",
+            "question": "鱼肝油是富含维生素D的滋补品，但是长期服用易患",
+            "answer": "尿结石 "
+        }, {
+            "type": "Q",
+            "question": "乌龙茶的另一称谓是什么",
+            "answer": "青茶 "
+        }, {
+            "type": "Q",
+            "question": "我国法律承认双重国籍吗",
+            "answer": "不承认 "
+        }, {
+            "type": "Q",
+            "question": "越窑瓷器有“秘色瓷”之称，这个“秘”指的是什么颜色",
+            "answer": "青色 "
+        }, {
+            "type": "Q",
+            "question": "《史记》中的“列传”有多少篇",
+            "answer": 70
+        }, {
+            "type": "Q",
+            "question": "WTO是哪个组织的称呼",
+            "answer": "世界贸易组织 "
+        }, {
+            "type": "Q",
+            "question": "干葡萄酒的特点是什么",
+            "answer": "尝不到甜味 "
+        }, {
+            "type": "Q",
+            "question": "输电线、架空铁路电缆等高压电源，致命范围是多少米",
+            "answer": 18
+        }, {
+            "type": "Q",
+            "question": "大兴安岭嘎仙洞石室，是古代哪个民族的发源地",
+            "answer": " 鲜卑 "
+        }, {
+            "type": "Q",
+            "question": "电影《刘三姐》是反映-什么民族的生活故事",
+            "answer": "壮族 "
+        }, {
+            "type": "Q",
+            "question": "欧洲的半岛在",
+            "answer": " 北欧 "
+        }, {
+            "type": "Q",
+            "question": "宋代的代表性刑罚是鱼的季节是",
+            "answer": " 春 "
+        }, {
+            "type": "Q",
+            "question": "不小心烫伤后应用哪种物品外敷较合理",
+            "answer": "牙膏 "
+        }];
+    </script>
+</body>
+
+</html>
