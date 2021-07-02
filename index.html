@@ -208,14 +208,14 @@
                     setTranslate: function() {
                         //draw(this, 1);
                     },
-                    tap: function(swiper, e) {
-                        if (question == undefined) {
+                    tap: function(swiper, event) {
+                        if (question.length == 0) {
                             return;
                         }
                         if (this.isEnd) {
                             addNew();
                         }
-                        if (e) {
+                        if (event) {
                             switch (status) {
                                 case "0":
 
