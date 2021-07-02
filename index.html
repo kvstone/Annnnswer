@@ -213,6 +213,9 @@
                         //draw(this, 1);
                     },
                     tap: function(swiper, e) {
+                        if (quetion == undefined) {
+                            return;
+                        }
                         if (this.isEnd) {
                             addNew();
                         }
@@ -373,6 +376,9 @@
 
                     question = data;
                     $("#go").show();
+                },
+                error: function() {
+                    alert("加载题库出错");
                 }
 
             });
