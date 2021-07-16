@@ -145,7 +145,7 @@
             pic.src = "https://bing.ioliu.cn/v1/rand?&" + Math.random();
             //$("#img").attr("src", pic.src);
             //Img.push(pic);
-            var qest = question.splice(Math.floor(Math.random() * question.length),1);
+            var qest = question.splice(Math.floor(Math.random() * question.length),1)[0];
             mySwiper.appendSlide('<div class="swiper-slide" style="background-image: url(' + pic.src + ');"><h2>' + qest.question + '？</h2><h2 class="answer">' + qest.answer + '</h2></div>');
             //console.log((new Blob([pic.src])).size);
             if (mySwiper.slides.length > 3) {
