@@ -101,6 +101,12 @@
             display: none;
             background-color: rgb(255 255 255 / 25%);
         }
+        
+        .swiper-slide {
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
     </style>
 </head>
 
@@ -112,7 +118,7 @@
     </div>
     <div class="swiper-container">
         <div class="swiper-wrapper">
-            <div class="swiper-slide" data-poster="https://bing.ioliu.cn/v1/rand?&1">
+            <div class="swiper-slide" data-poster="https://picsum.photos/1920/1080">
                 <h2>Ready...<br>
                     <div style="font-size: 25px;">题库：<input type="text" id="dic" name="firstname" placeholder="demo" value="demo">
                         <input type="button" id="btn" value="加载题库"></div>
@@ -142,7 +148,7 @@
 
         function addNew() {
             var pic = new Image();
-            pic.src = "https://bing.ioliu.cn/v1/rand?&" + Math.random();
+            pic.src = "https://picsum.photos/1920/1080?" + Math.random();
             //$("#img").attr("src", pic.src);
             //Img.push(pic);
             var qest = question.splice(Math.floor(Math.random() * question.length),1)[0];
@@ -279,17 +285,17 @@
             // 每一个显示块的宽度
             blockWidth = clientWidth / 5
 
-            // 使用的图片大小 720/1280=0.5625	
+            // 使用的图片大小 1080/1920=0.5625	
             // 图片裁剪区域
             if (clientHeight / clientWidth > 0.5625) {
-                cutWidth = 720 * clientWidth / clientHeight
-                cutX = (1280 - cutWidth) / 2
-                cutHeight = 720
+                cutWidth = 1080 * clientWidth / clientHeight
+                cutX = (1920 - cutWidth) / 2
+                cutHeight = 1080
                 cutY = 0
             } else {
-                cutHeight = 1280 * clientHeight / clientWidth
-                cutY = (720 - cutHeight) / 2
-                cutWidth = 1280
+                cutHeight = 1920 * clientHeight / clientWidth
+                cutY = (1080 - cutHeight) / 2
+                cutWidth = 1920
                 cutX = 0
             }
 
